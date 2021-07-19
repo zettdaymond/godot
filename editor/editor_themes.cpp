@@ -996,7 +996,7 @@ Ref<Theme> create_editor_theme(const Ref<Theme> p_theme) {
 	theme->set_stylebox("DebuggerPanel", "EditorStyles", style_panel_debugger);
 
 	Ref<StyleBoxFlat> style_panel_invisible_top = style_content_panel->duplicate();
-	int stylebox_offset = theme->get_font("tab_selected", "TabContainer")->get_height(theme->get_font_size("tab_selected", "TabContainer")) + theme->get_stylebox("tab_selected", "TabContainer")->get_minimum_size().height + theme->get_stylebox("panel", "TabContainer")->get_default_margin(SIDE_TOP);
+	int stylebox_offset = theme->get_font("tab_selected", "TabContainer")->get_height(theme->get_font_size("tab_selected", "TabContainer")) + theme->get_stylebox(SNAME("tab_selected"), SNAME("TabContainer"))->get_minimum_size().height + theme->get_stylebox(SNAME("panel"), SNAME("TabContainer"))->get_default_margin(SIDE_TOP);
 	style_panel_invisible_top->set_expand_margin_size(SIDE_TOP, -stylebox_offset);
 	style_panel_invisible_top->set_default_margin(SIDE_TOP, 0);
 	theme->set_stylebox("BottomPanelDebuggerOverride", "EditorStyles", style_panel_invisible_top);
@@ -1365,6 +1365,10 @@ Ref<Theme> create_editor_theme(const Ref<Theme> p_theme) {
 	theme_preview_picker_sb->set_border_color(accent_color);
 	theme_preview_picker_sb->set_border_width_all(1.0 * EDSCALE);
 	theme->set_stylebox("preview_picker_overlay", "ThemeEditor", theme_preview_picker_sb);
+	Color theme_preview_picker_label_bg_color = accent_color;
+	theme_preview_picker_label_bg_color.set_v(0.5);
+	Ref<StyleBoxFlat> theme_preview_picker_label_sb = make_flat_stylebox(theme_preview_picker_label_bg_color, 4.0, 1.0, 4.0, 3.0);
+	theme->set_stylebox("preview_picker_label", "ThemeEditor", theme_preview_picker_label_sb);
 
 	// adaptive script theme constants
 	// for comments and elements with lower relevance

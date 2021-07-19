@@ -248,16 +248,16 @@ void Viewport::_sub_window_update(Window *p_window) {
 	Rect2i r = Rect2i(p_window->get_position(), sw.window->get_size());
 
 	if (!p_window->get_flag(Window::FLAG_BORDERLESS)) {
-		Ref<StyleBox> panel = p_window->get_theme_stylebox("panel_window");
+		Ref<StyleBox> panel = p_window->get_theme_stylebox(SNAME("panel_window"));
 		panel->draw(sw.canvas_item, r);
 
 		// Draw the title bar text.
-		Ref<Font> title_font = p_window->get_theme_font("title_font");
-		int font_size = p_window->get_theme_font_size("title_font_size");
-		Color title_color = p_window->get_theme_color("title_color");
-		int title_height = p_window->get_theme_constant("title_height");
-		int close_h_ofs = p_window->get_theme_constant("close_h_ofs");
-		int close_v_ofs = p_window->get_theme_constant("close_v_ofs");
+		Ref<Font> title_font = p_window->get_theme_font(SNAME("title_font"));
+		int font_size = p_window->get_theme_font_size(SNAME("title_font_size"));
+		Color title_color = p_window->get_theme_color(SNAME("title_color"));
+		int title_height = p_window->get_theme_constant(SNAME("title_height"));
+		int close_h_ofs = p_window->get_theme_constant(SNAME("close_h_ofs"));
+		int close_v_ofs = p_window->get_theme_constant(SNAME("close_v_ofs"));
 
 		TextLine title_text = TextLine(p_window->get_title(), title_font, font_size, Dictionary(), TranslationServer::get_singleton()->get_tool_locale());
 		title_text.set_width(r.size.width - panel->get_minimum_size().x - close_h_ofs);
@@ -265,8 +265,8 @@ void Viewport::_sub_window_update(Window *p_window) {
 		int x = (r.size.width - title_text.get_size().x) / 2;
 		int y = (-title_height - title_text.get_size().y) / 2;
 
-		Color font_outline_color = p_window->get_theme_color("title_outline_modulate");
-		int outline_size = p_window->get_theme_constant("title_outline_size");
+		Color font_outline_color = p_window->get_theme_color(SNAME("title_outline_modulate"));
+		int outline_size = p_window->get_theme_constant(SNAME("title_outline_size"));
 		if (outline_size > 0 && font_outline_color.a > 0) {
 			title_text.draw_outline(sw.canvas_item, r.position + Point2(x, y), outline_size, font_outline_color);
 		}
@@ -706,7 +706,6 @@ void Viewport::_process_picking() {
 							bool send_event = true;
 							if (is_mouse) {
 								Map<ObjectID, uint64_t>::Element *F = physics_2d_mouseover.find(res[i].collider_id);
-
 								if (!F) {
 									physics_2d_mouseover.insert(res[i].collider_id, frame);
 									co->_mouse_enter();
@@ -716,6 +715,13 @@ void Viewport::_process_picking() {
 									if (mm.is_valid() && mm->get_device() == InputEvent::DEVICE_ID_INTERNAL) {
 										send_event = false;
 									}
+								}
+								Map<Pair<ObjectID, int>, uint64_t, PairSort<ObjectID, int>>::Element *SF = physics_2d_shape_mouseover.find(Pair(res[i].collider_id, res[i].shape));
+								if (!SF) {
+									physics_2d_shape_mouseover.insert(Pair(res[i].collider_id, res[i].shape), frame);
+									co->_mouse_shape_enter(res[i].shape);
+								} else {
+									SF->get() = frame;
 								}
 							}
 
@@ -728,25 +734,7 @@ void Viewport::_process_picking() {
 			}
 
 			if (is_mouse) {
-				List<Map<ObjectID, uint64_t>::Element *> to_erase;
-
-				for (Map<ObjectID, uint64_t>::Element *E = physics_2d_mouseover.front(); E; E = E->next()) {
-					if (E->get() != frame) {
-						Object *o = ObjectDB::get_instance(E->key());
-						if (o) {
-							CollisionObject2D *co = Object::cast_to<CollisionObject2D>(o);
-							if (co) {
-								co->_mouse_exit();
-							}
-						}
-						to_erase.push_back(E);
-					}
-				}
-
-				while (to_erase.size()) {
-					physics_2d_mouseover.erase(to_erase.front()->get());
-					to_erase.pop_front();
-				}
+				_cleanup_mouseover_colliders(false, false, frame);
 			}
 		}
 
@@ -859,7 +847,7 @@ void Viewport::_set_size(const Size2i &p_size, const Size2i &p_size_2d_override,
 
 	update_canvas_items();
 
-	emit_signal("size_changed");
+	emit_signal(SNAME("size_changed"));
 }
 
 Size2i Viewport::_get_size() const {
@@ -1562,6 +1550,9 @@ void Viewport::_gui_show_tooltip() {
 		return;
 	}
 
+	// Popup window which houses the tooltip content.
+	TooltipPanel *panel = memnew(TooltipPanel);
+
 	// Controls can implement `make_custom_tooltip` to provide their own tooltip.
 	// This should be a Control node which will be added as child to a TooltipPanel.
 	Control *base_tooltip = tooltip_owner->make_custom_tooltip(tooltip_text);
@@ -1571,11 +1562,11 @@ void Viewport::_gui_show_tooltip() {
 		gui.tooltip_label = memnew(TooltipLabel);
 		gui.tooltip_label->set_text(tooltip_text);
 		base_tooltip = gui.tooltip_label;
+		panel->connect("mouse_entered", callable_mp(this, &Viewport::_gui_cancel_tooltip));
 	}
 
 	base_tooltip->set_anchors_and_offsets_preset(Control::PRESET_WIDE);
 
-	TooltipPanel *panel = memnew(TooltipPanel);
 	panel->set_transient(false);
 	panel->set_flag(Window::FLAG_NO_FOCUS, true);
 	panel->set_wrap_controls(true);
@@ -2223,7 +2214,7 @@ void Viewport::_gui_input_event(Ref<InputEvent> p_event) {
 					Window *sw = embedder->gui.sub_windows[i].window;
 					Rect2 swrect = Rect2i(sw->get_position(), sw->get_size());
 					if (!sw->get_flag(Window::FLAG_BORDERLESS)) {
-						int title_height = sw->get_theme_constant("title_height");
+						int title_height = sw->get_theme_constant(SNAME("title_height"));
 						swrect.position.y -= title_height;
 						swrect.size.y += title_height;
 					}
@@ -2572,7 +2563,7 @@ void Viewport::_gui_control_grab_focus(Control *p_control) {
 	}
 	get_tree()->call_group_flags(SceneTree::GROUP_CALL_REALTIME, "_viewports", "_gui_remove_focus_for_window", (Node *)get_base_window());
 	gui.key_focus = p_control;
-	emit_signal("gui_focus_changed", p_control);
+	emit_signal(SNAME("gui_focus_changed"), p_control);
 	p_control->notification(Control::NOTIFICATION_FOCUS_ENTER);
 	p_control->update();
 }
@@ -2607,26 +2598,7 @@ void Viewport::_drop_mouse_focus() {
 void Viewport::_drop_physics_mouseover(bool p_paused_only) {
 	physics_has_last_mousepos = false;
 
-	List<Map<ObjectID, uint64_t>::Element *> to_erase;
-
-	for (Map<ObjectID, uint64_t>::Element *E = physics_2d_mouseover.front(); E; E = E->next()) {
-		Object *o = ObjectDB::get_instance(E->key());
-		if (o) {
-			CollisionObject2D *co = Object::cast_to<CollisionObject2D>(o);
-			if (co) {
-				if (p_paused_only && co->can_process()) {
-					continue;
-				}
-				co->_mouse_exit();
-				to_erase.push_back(E);
-			}
-		}
-	}
-
-	while (to_erase.size()) {
-		physics_2d_mouseover.erase(to_erase.front()->get());
-		to_erase.pop_front();
-	}
+	_cleanup_mouseover_colliders(true, p_paused_only);
 
 #ifndef _3D_DISABLED
 	if (physics_object_over.is_valid()) {
@@ -2642,13 +2614,66 @@ void Viewport::_drop_physics_mouseover(bool p_paused_only) {
 #endif
 }
 
+void Viewport::_cleanup_mouseover_colliders(bool p_clean_all_frames, bool p_paused_only, uint64_t p_frame_reference) {
+	List<Map<ObjectID, uint64_t>::Element *> to_erase;
+
+	for (Map<ObjectID, uint64_t>::Element *E = physics_2d_mouseover.front(); E; E = E->next()) {
+		if (!p_clean_all_frames && E->get() == p_frame_reference) {
+			continue;
+		}
+
+		Object *o = ObjectDB::get_instance(E->key());
+		if (o) {
+			CollisionObject2D *co = Object::cast_to<CollisionObject2D>(o);
+			if (co) {
+				if (p_clean_all_frames && p_paused_only && co->can_process()) {
+					continue;
+				}
+				co->_mouse_exit();
+			}
+		}
+		to_erase.push_back(E);
+	}
+
+	while (to_erase.size()) {
+		physics_2d_mouseover.erase(to_erase.front()->get());
+		to_erase.pop_front();
+	}
+
+	// Per-shape
+	List<Map<Pair<ObjectID, int>, uint64_t, PairSort<ObjectID, int>>::Element *> shapes_to_erase;
+
+	for (Map<Pair<ObjectID, int>, uint64_t, PairSort<ObjectID, int>>::Element *E = physics_2d_shape_mouseover.front(); E; E = E->next()) {
+		if (!p_clean_all_frames && E->get() == p_frame_reference) {
+			continue;
+		}
+
+		Object *o = ObjectDB::get_instance(E->key().first);
+		if (o) {
+			CollisionObject2D *co = Object::cast_to<CollisionObject2D>(o);
+			if (co) {
+				if (p_clean_all_frames && p_paused_only && co->can_process()) {
+					continue;
+				}
+				co->_mouse_shape_exit(E->key().second);
+			}
+		}
+		shapes_to_erase.push_back(E);
+	}
+
+	while (shapes_to_erase.size()) {
+		physics_2d_shape_mouseover.erase(shapes_to_erase.front()->get());
+		shapes_to_erase.pop_front();
+	}
+}
+
 Control *Viewport::_gui_get_focus_owner() {
 	return gui.key_focus;
 }
 
 void Viewport::_gui_grab_click_focus(Control *p_control) {
 	gui.mouse_click_grabber = p_control;
-	call_deferred("_post_gui_grab_click_focus");
+	call_deferred(SNAME("_post_gui_grab_click_focus"));
 }
 
 void Viewport::_post_gui_grab_click_focus() {
@@ -2721,7 +2746,7 @@ Viewport::SubWindowResize Viewport::_sub_window_get_resize_margin(Window *p_subw
 
 	Rect2i r = Rect2i(p_subwindow->get_position(), p_subwindow->get_size());
 
-	int title_height = p_subwindow->get_theme_constant("title_height");
+	int title_height = p_subwindow->get_theme_constant(SNAME("title_height"));
 
 	r.position.y -= title_height;
 	r.size.y += title_height;
@@ -2733,7 +2758,7 @@ Viewport::SubWindowResize Viewport::_sub_window_get_resize_margin(Window *p_subw
 	int dist_x = p_point.x < r.position.x ? (p_point.x - r.position.x) : (p_point.x > (r.position.x + r.size.x) ? (p_point.x - (r.position.x + r.size.x)) : 0);
 	int dist_y = p_point.y < r.position.y ? (p_point.y - r.position.y) : (p_point.y > (r.position.y + r.size.y) ? (p_point.y - (r.position.y + r.size.y)) : 0);
 
-	int limit = p_subwindow->get_theme_constant("resize_margin");
+	int limit = p_subwindow->get_theme_constant(SNAME("resize_margin"));
 
 	if (ABS(dist_x) > limit) {
 		return SUB_WINDOW_RESIZE_DISABLED;
@@ -2815,7 +2840,7 @@ bool Viewport::_sub_windows_forward_input(const Ref<InputEvent> &p_event) {
 						new_rect.position.x = 0;
 					}
 
-					int title_height = gui.subwindow_focused->get_flag(Window::FLAG_BORDERLESS) ? 0 : gui.subwindow_focused->get_theme_constant("title_height");
+					int title_height = gui.subwindow_focused->get_flag(Window::FLAG_BORDERLESS) ? 0 : gui.subwindow_focused->get_theme_constant(SNAME("title_height"));
 
 					if (new_rect.position.y < title_height) {
 						new_rect.position.y = title_height;
@@ -2919,7 +2944,7 @@ bool Viewport::_sub_windows_forward_input(const Ref<InputEvent> &p_event) {
 
 			if (!sw.window->get_flag(Window::FLAG_BORDERLESS)) {
 				//check top bar
-				int title_height = sw.window->get_theme_constant("title_height");
+				int title_height = sw.window->get_theme_constant(SNAME("title_height"));
 				Rect2i title_bar = r;
 				title_bar.position.y -= title_height;
 				title_bar.size.y = title_height;
@@ -2927,9 +2952,9 @@ bool Viewport::_sub_windows_forward_input(const Ref<InputEvent> &p_event) {
 				if (title_bar.has_point(mb->get_position())) {
 					click_on_window = true;
 
-					int close_h_ofs = sw.window->get_theme_constant("close_h_ofs");
-					int close_v_ofs = sw.window->get_theme_constant("close_v_ofs");
-					Ref<Texture2D> close_icon = sw.window->get_theme_icon("close");
+					int close_h_ofs = sw.window->get_theme_constant(SNAME("close_h_ofs"));
+					int close_v_ofs = sw.window->get_theme_constant(SNAME("close_v_ofs"));
+					Ref<Texture2D> close_icon = sw.window->get_theme_icon(SNAME("close"));
 
 					Rect2 close_rect;
 					close_rect.position = Vector2(r.position.x + r.size.x - close_v_ofs, r.position.y - close_h_ofs);

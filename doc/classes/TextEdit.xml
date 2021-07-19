@@ -382,6 +382,13 @@
 			<description>
 			</description>
 		</method>
+		<method name="is_menu_visible" qualifiers="const">
+			<return type="bool">
+			</return>
+			<description>
+				Returns whether the menu is visible. Use this instead of [code]get_menu().visible[/code] to improve performance (so the creation of the menu is avoided).
+			</description>
+		</method>
 		<method name="is_selection_active" qualifiers="const">
 			<return type="bool">
 			</return>
@@ -851,9 +858,9 @@
 		</constant>
 		<constant name="GUTTER_TYPE_STRING" value="0" enum="GutterType">
 		</constant>
-		<constant name="GUTTER_TPYE_ICON" value="1" enum="GutterType">
+		<constant name="GUTTER_TYPE_ICON" value="1" enum="GutterType">
 		</constant>
-		<constant name="GUTTER_TPYE_CUSTOM" value="2" enum="GutterType">
+		<constant name="GUTTER_TYPE_CUSTOM" value="2" enum="GutterType">
 		</constant>
 		<constant name="MENU_CUT" value="0" enum="MenuItems">
 			Cuts (copies and clears) the selected text.

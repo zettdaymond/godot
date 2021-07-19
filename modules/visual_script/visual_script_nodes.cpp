@@ -191,7 +191,10 @@ PropertyInfo VisualScriptFunction::get_input_value_port_info(int p_idx) const {
 }
 
 PropertyInfo VisualScriptFunction::get_output_value_port_info(int p_idx) const {
-	ERR_FAIL_INDEX_V(p_idx, arguments.size(), PropertyInfo());
+	// Need to check it without ERR_FAIL_COND, to prevent warnings from appearing on node creation via dragging.
+	if (p_idx < 0 || p_idx >= arguments.size()) {
+		return PropertyInfo();
+	}
 	PropertyInfo out;
 	out.type = arguments[p_idx].type;
 	out.name = arguments[p_idx].name;
@@ -2987,7 +2990,7 @@ VisualScriptNodeInstance *VisualScriptCustomNode::instantiate(VisualScriptInstan
 }
 
 void VisualScriptCustomNode::_script_changed() {
-	call_deferred("ports_changed_notify");
+	call_deferred(SNAME("ports_changed_notify"));
 }
 
 void VisualScriptCustomNode::_bind_methods() {

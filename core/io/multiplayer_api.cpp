@@ -941,7 +941,7 @@ void MultiplayerAPI::_send_rpc(Node *p_from, int p_to, uint16_t p_rpc_id, const 
 void MultiplayerAPI::_add_peer(int p_id) {
 	connected_peers.insert(p_id);
 	path_get_cache.insert(p_id, PathGetCache());
-	emit_signal("network_peer_connected", p_id);
+	emit_signal(SNAME("network_peer_connected"), p_id);
 }
 
 void MultiplayerAPI::_del_peer(int p_id) {
@@ -956,19 +956,19 @@ void MultiplayerAPI::_del_peer(int p_id) {
 		PathSentCache *psc = path_send_cache.getptr(E->get());
 		psc->confirmed_peers.erase(p_id);
 	}
-	emit_signal("network_peer_disconnected", p_id);
+	emit_signal(SNAME("network_peer_disconnected"), p_id);
 }
 
 void MultiplayerAPI::_connected_to_server() {
-	emit_signal("connected_to_server");
+	emit_signal(SNAME("connected_to_server"));
 }
 
 void MultiplayerAPI::_connection_failed() {
-	emit_signal("connection_failed");
+	emit_signal(SNAME("connection_failed"));
 }
 
 void MultiplayerAPI::_server_disconnected() {
-	emit_signal("server_disconnected");
+	emit_signal(SNAME("server_disconnected"));
 }
 
 void MultiplayerAPI::rpcp(Node *p_node, int p_peer_id, bool p_unreliable, const StringName &p_method, const Variant **p_arg, int p_argcount) {
@@ -1059,7 +1059,7 @@ void MultiplayerAPI::_process_raw(int p_from, const uint8_t *p_packet, int p_pac
 		uint8_t *w = out.ptrw();
 		memcpy(&w[0], &p_packet[1], len);
 	}
-	emit_signal("network_peer_packet", p_from, out);
+	emit_signal(SNAME("network_peer_packet"), p_from, out);
 }
 
 int MultiplayerAPI::get_network_unique_id() const {
@@ -1068,9 +1068,7 @@ int MultiplayerAPI::get_network_unique_id() const {
 }
 
 bool MultiplayerAPI::is_network_server() const {
-	// XXX Maybe fail silently? Maybe should actually return true to make development of both local and online multiplayer easier?
-	ERR_FAIL_COND_V_MSG(!network_peer.is_valid(), false, "No network peer is assigned. I can't be a server.");
-	return network_peer->is_server();
+	return network_peer.is_valid() && network_peer->is_server();
 }
 
 void MultiplayerAPI::set_refuse_new_network_connections(bool p_refuse) {

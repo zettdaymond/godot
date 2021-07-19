@@ -1752,6 +1752,11 @@ void VisualShader::_update_shader() const {
 
 		StringBuilder func_code;
 
+		bool is_empty_func = false;
+		if (shader_mode != Shader::MODE_PARTICLES && shader_mode != Shader::MODE_SKY) {
+			is_empty_func = true;
+		}
+
 		for (const List<Connection>::Element *E = graph[i].connections.front(); E; E = E->next()) {
 			ConnectionKey from_key;
 			from_key.node = E->get().from_node;
@@ -1764,7 +1769,16 @@ void VisualShader::_update_shader() const {
 			to_key.port = E->get().to_port;
 
 			input_connections.insert(to_key, E);
+
+			if (is_empty_func && to_key.node == NODE_ID_OUTPUT) {
+				is_empty_func = false;
+			}
 		}
+
+		if (is_empty_func) {
+			continue;
+		}
+
 		if (shader_mode != Shader::MODE_PARTICLES) {
 			func_code += "\nvoid " + String(func_name[i]) + "() {\n";
 		}
@@ -1929,7 +1943,7 @@ void VisualShader::_update_shader() const {
 		const_cast<VisualShader *>(this)->set_default_texture_param(default_tex_params[i].name, default_tex_params[i].param);
 	}
 	if (previous_code != final_code) {
-		const_cast<VisualShader *>(this)->emit_signal("changed");
+		const_cast<VisualShader *>(this)->emit_signal(SNAME("changed"));
 	}
 	previous_code = final_code;
 }
@@ -1940,7 +1954,7 @@ void VisualShader::_queue_update() {
 	}
 
 	dirty.set();
-	call_deferred("_update_shader");
+	call_deferred(SNAME("_update_shader"));
 }
 
 void VisualShader::_input_type_changed(Type p_type, int p_id) {
@@ -2422,7 +2436,7 @@ void VisualShaderNodeInput::set_input_name(String p_name) {
 	input_name = p_name;
 	emit_changed();
 	if (get_input_type_by_name(input_name) != prev_type) {
-		emit_signal("input_type_changed");
+		emit_signal(SNAME("input_type_changed"));
 	}
 }
 
@@ -2963,7 +2977,7 @@ VisualShaderNodeOutput::VisualShaderNodeOutput() {
 
 void VisualShaderNodeUniform::set_uniform_name(const String &p_name) {
 	uniform_name = p_name;
-	emit_signal("name_changed");
+	emit_signal(SNAME("name_changed"));
 	emit_changed();
 }
 
