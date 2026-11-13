@@ -38,7 +38,7 @@ DateInterval::DateInterval(const DateInterval& other)
 
 
 DateInterval&
-DateInterval::operator=(const DateInterval& other) {
+DateInterval::operator=(const DateInterval& other) U_LIFETIME_BOUND {
     if ( this != &other ) {
         fromDate = other.fromDate;
         toDate = other.toDate;
@@ -53,7 +53,7 @@ DateInterval::clone() const {
 }
 
 
-UBool 
+bool
 DateInterval::operator==(const DateInterval& other) const { 
     return ( fromDate == other.fromDate && toDate == other.toDate );
 }

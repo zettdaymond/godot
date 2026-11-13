@@ -71,7 +71,7 @@ StringCharacterIterator::~StringCharacterIterator() {
 }
 
 StringCharacterIterator&
-StringCharacterIterator::operator=(const StringCharacterIterator& that) {
+StringCharacterIterator::operator=(const StringCharacterIterator& that) U_LIFETIME_BOUND {
     UCharCharacterIterator::operator=(that);
     text = that.text;
     // we had set the input parameter's array, now we need to set our copy's array
@@ -79,10 +79,10 @@ StringCharacterIterator::operator=(const StringCharacterIterator& that) {
     return *this;
 }
 
-UBool
+bool
 StringCharacterIterator::operator==(const ForwardCharacterIterator& that) const {
     if (this == &that) {
-        return TRUE;
+        return true;
     }
 
     // do not call UCharCharacterIterator::operator==()
@@ -90,10 +90,10 @@ StringCharacterIterator::operator==(const ForwardCharacterIterator& that) const 
     // while we compare UnicodeString objects
 
     if (typeid(*this) != typeid(that)) {
-        return FALSE;
+        return false;
     }
 
-    StringCharacterIterator&    realThat = (StringCharacterIterator&)that;
+    const StringCharacterIterator&    realThat = static_cast<const StringCharacterIterator&>(that);
 
     return text == realThat.text
         && pos == realThat.pos

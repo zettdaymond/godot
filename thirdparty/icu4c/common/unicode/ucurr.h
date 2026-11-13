@@ -115,14 +115,13 @@ typedef enum UCurrNameStyle {
      */
     UCURR_NARROW_SYMBOL_NAME,
 
-#ifndef U_HIDE_DRAFT_API
     /**
      * Selector for getName() indicating the formal currency symbol.
      * The formal currency symbol is similar to the regular currency
      * symbol, but it always takes the form used in formal settings
      * such as banking; for example, "NT$" instead of "$" for TWD in zh-TW.
      *
-     * @draft ICU 68
+     * @stable ICU 68
      */
     UCURR_FORMAL_SYMBOL_NAME,
 
@@ -131,10 +130,9 @@ typedef enum UCurrNameStyle {
      * The variant symbol for a currency is an alternative symbol
      * that is not necessarily as widely used as the regular symbol.
      *
-     * @draft ICU 68
+     * @stable ICU 68
      */
     UCURR_VARIANT_SYMBOL_NAME
-#endif  // U_HIDE_DRAFT_API
     
 } UCurrNameStyle;
 
@@ -192,7 +190,7 @@ ucurr_unregister(UCurrRegistryKey key, UErrorCode* status);
  * @stable ICU 2.6
  */
 U_CAPI const UChar* U_EXPORT2
-ucurr_getName(const UChar* currency,
+ucurr_getName(const UChar* currency U_LIFETIME_BOUND,
               const char* locale,
               UCurrNameStyle nameStyle,
               UBool* isChoiceFormat,
@@ -217,7 +215,7 @@ ucurr_getName(const UChar* currency,
  * @stable ICU 4.2
  */
 U_CAPI const UChar* U_EXPORT2
-ucurr_getPluralName(const UChar* currency,
+ucurr_getPluralName(const UChar* currency U_LIFETIME_BOUND,
                     const char* locale,
                     UBool* isChoiceFormat,
                     const char* pluralCount,
@@ -462,6 +460,16 @@ ucurr_getKeywordValuesForLocale(const char* key,
  */
 U_CAPI int32_t U_EXPORT2
 ucurr_getNumericCode(const UChar* currency);
+
+/**
+ * The number of digits to be used when formatting
+ * a currency amount when the default number of
+ * digits cannot be determined from the currency name.
+ *
+ * @internal ICU 79 technology preview
+ * @deprecated This API is for technology preview only.
+ */
+#define U_CURR_DEFAULT_DIGITS 2
 
 #endif /* #if !UCONFIG_NO_FORMATTING */
 

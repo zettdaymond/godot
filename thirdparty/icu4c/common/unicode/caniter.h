@@ -73,7 +73,7 @@ Results for: {LATIN CAPITAL LETTER A WITH RING ABOVE}{LATIN SMALL LETTER D}{COMB
  * @author C++ port by V. Weinstein
  * @stable ICU 2.4
  */
-class U_COMMON_API CanonicalIterator U_FINAL : public UObject {
+class U_COMMON_API CanonicalIterator final : public UObject {
 public:
     /**
      * Construct a CanonicalIterator object
@@ -128,9 +128,10 @@ public:
      * @param skipZeros  determine if skip zeros
      * @param result     the results in a set.
      * @param status       Fill-in parameter which receives the status of this operation.
+     * @param depth     depth of the call.
      * @internal
      */
-    static void U_EXPORT2 permute(UnicodeString &source, UBool skipZeros, Hashtable *result, UErrorCode &status);
+    static void U_EXPORT2 permute(UnicodeString &source, UBool skipZeros, Hashtable *result, UErrorCode &status, int32_t depth=0);
 #endif  /* U_HIDE_INTERNAL_API */
 
     /**
@@ -145,25 +146,23 @@ public:
      *
      * @stable ICU 2.2
      */
-    virtual UClassID getDynamicClassID() const;
+    virtual UClassID getDynamicClassID() const override;
 
 private:
     // ===================== PRIVATES ==============================
     // private default constructor
-    CanonicalIterator();
+    CanonicalIterator() = delete;
 
 
     /**
      * Copy constructor. Private for now.
-     * @internal (private)
      */
-    CanonicalIterator(const CanonicalIterator& other);
+    CanonicalIterator(const CanonicalIterator& other) = delete;
 
     /**
      * Assignment operator. Private for now.
-     * @internal (private)
      */
-    CanonicalIterator& operator=(const CanonicalIterator& other);
+    CanonicalIterator& operator=(const CanonicalIterator& other) = delete;
 
     // fields
     UnicodeString source;
@@ -182,23 +181,31 @@ private:
     // transient fields
     UnicodeString buffer;
 
-    const Normalizer2 &nfd;
-    const Normalizer2Impl &nfcImpl;
+    const Normalizer2 *nfd;
+    const Normalizer2Impl *nfcImpl;
 
     // we have a segment, in NFD. Find all the strings that are canonically equivalent to it.
     UnicodeString *getEquivalents(const UnicodeString &segment, int32_t &result_len, UErrorCode &status); //private String[] getEquivalents(String segment)
 
     //Set getEquivalents2(String segment);
-    Hashtable *getEquivalents2(Hashtable *fillinResult, const char16_t *segment, int32_t segLen, UErrorCode &status);
+    Hashtable* getEquivalents2(Hashtable* fillinResult U_LIFETIME_BOUND,
+                               const char16_t* segment,
+                               int32_t segLen,
+                               UErrorCode& status);
     //Hashtable *getEquivalents2(const UnicodeString &segment, int32_t segLen, UErrorCode &status);
 
     /**
      * See if the decomposition of cp2 is at segment starting at segmentPos
-     * (with canonical rearrangment!)
+     * (with canonical rearrangement!)
      * If so, take the remainder, and return the equivalents
      */
     //Set extract(int comp, String segment, int segmentPos, StringBuffer buffer);
-    Hashtable *extract(Hashtable *fillinResult, UChar32 comp, const char16_t *segment, int32_t segLen, int32_t segmentPos, UErrorCode &status);
+    Hashtable* extract(Hashtable* fillinResult U_LIFETIME_BOUND,
+                       UChar32 comp,
+                       const char16_t* segment,
+                       int32_t segLen,
+                       int32_t segmentPos,
+                       UErrorCode& status);
     //Hashtable *extract(UChar32 comp, const UnicodeString &segment, int32_t segLen, int32_t segmentPos, UErrorCode &status);
 
     void cleanPieces();

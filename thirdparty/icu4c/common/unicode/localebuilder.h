@@ -18,7 +18,7 @@
  */
 
 U_NAMESPACE_BEGIN
-class CharString;
+class FixedString;
 
 /**
  * <code>LocaleBuilder</code> is used to build instances of <code>Locale</code>
@@ -87,11 +87,10 @@ public:
      *
      * @stable ICU 64
      */
-    LocaleBuilder& setLocale(const Locale& locale);
+    LocaleBuilder& setLocale(const Locale& locale) U_LIFETIME_BOUND;
 
     /**
-     * Resets the LocaleBuilder to match the provided
-     * [Unicode Locale Identifier](http://www.unicode.org/reports/tr35/tr35.html#unicode_locale_id) .
+     * Resets the LocaleBuilder to match the provided IETF BCP 47 language tag.
      * Discards the existing state.
      * The empty string causes the builder to be reset, like {@link #clear}.
      * Legacy language tags (marked as “Type: grandfathered” in BCP 47)
@@ -101,12 +100,11 @@ public:
      *
      * <p>This method clears the internal UErrorCode.
      *
-     * @param tag the language tag, defined as
-     *   [unicode_locale_id](http://www.unicode.org/reports/tr35/tr35.html#unicode_locale_id).
+     * @param tag the language tag, defined as IETF BCP 47 language tag.
      * @return This builder.
      * @stable ICU 64
      */
-    LocaleBuilder& setLanguageTag(StringPiece tag);
+    LocaleBuilder& setLanguageTag(StringPiece tag) U_LIFETIME_BOUND;
 
     /**
      * Sets the language.  If <code>language</code> is the empty string, the
@@ -121,7 +119,7 @@ public:
      * @return This builder.
      * @stable ICU 64
      */
-    LocaleBuilder& setLanguage(StringPiece language);
+    LocaleBuilder& setLanguage(StringPiece language) U_LIFETIME_BOUND;
 
     /**
      * Sets the script. If <code>script</code> is the empty string, the script in
@@ -137,7 +135,7 @@ public:
      * @return This builder.
      * @stable ICU 64
      */
-    LocaleBuilder& setScript(StringPiece script);
+    LocaleBuilder& setScript(StringPiece script) U_LIFETIME_BOUND;
 
     /**
      * Sets the region.  If region is the empty string, the region in this
@@ -156,7 +154,7 @@ public:
      * @return This builder.
      * @stable ICU 64
      */
-    LocaleBuilder& setRegion(StringPiece region);
+    LocaleBuilder& setRegion(StringPiece region) U_LIFETIME_BOUND;
 
     /**
      * Sets the variant.  If variant is the empty string, the variant in this
@@ -177,7 +175,7 @@ public:
      * @return This builder.
      * @stable ICU 64
      */
-    LocaleBuilder& setVariant(StringPiece variant);
+    LocaleBuilder& setVariant(StringPiece variant) U_LIFETIME_BOUND;
 
     /**
      * Sets the extension for the given key. If the value is the empty string,
@@ -198,7 +196,7 @@ public:
      * @return This builder.
      * @stable ICU 64
      */
-    LocaleBuilder& setExtension(char key, StringPiece value);
+    LocaleBuilder& setExtension(char key, StringPiece value) U_LIFETIME_BOUND;
 
     /**
      * Sets the Unicode locale keyword type for the given key. If the type
@@ -218,8 +216,7 @@ public:
      * @return This builder.
      * @stable ICU 64
      */
-    LocaleBuilder& setUnicodeLocaleKeyword(
-        StringPiece key, StringPiece type);
+    LocaleBuilder& setUnicodeLocaleKeyword(StringPiece key, StringPiece type) U_LIFETIME_BOUND;
 
     /**
      * Adds a unicode locale attribute, if not already present, otherwise
@@ -231,7 +228,7 @@ public:
      * @return This builder.
      * @stable ICU 64
      */
-    LocaleBuilder& addUnicodeLocaleAttribute(StringPiece attribute);
+    LocaleBuilder& addUnicodeLocaleAttribute(StringPiece attribute) U_LIFETIME_BOUND;
 
     /**
      * Removes a unicode locale attribute, if present, otherwise has no
@@ -244,7 +241,7 @@ public:
      * @return This builder.
      * @stable ICU 64
      */
-    LocaleBuilder& removeUnicodeLocaleAttribute(StringPiece attribute);
+    LocaleBuilder& removeUnicodeLocaleAttribute(StringPiece attribute) U_LIFETIME_BOUND;
 
     /**
      * Resets the builder to its initial, empty state.
@@ -253,7 +250,7 @@ public:
      * @return this builder
      * @stable ICU 64
      */
-    LocaleBuilder& clear();
+    LocaleBuilder& clear() U_LIFETIME_BOUND;
 
     /**
      * Resets the extensions to their initial, empty state.
@@ -262,7 +259,7 @@ public:
      * @return this builder
      * @stable ICU 64
      */
-    LocaleBuilder& clearExtensions();
+    LocaleBuilder& clearExtensions() U_LIFETIME_BOUND;
 
     /**
      * Returns an instance of <code>Locale</code> created from the fields set
@@ -299,7 +296,7 @@ private:
     char language_[9];
     char script_[5];
     char region_[4];
-    CharString *variant_;  // Pointer not object so we need not #include internal charstr.h.
+    FixedString *variant_;  // Pointer not object so we need not #include internal fixedstring.h.
     icu::Locale *extensions_;  // Pointer not object. Storage for all other fields.
 
 };

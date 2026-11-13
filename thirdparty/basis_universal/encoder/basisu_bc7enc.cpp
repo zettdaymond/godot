@@ -1,5 +1,5 @@
 // File: basisu_bc7enc.cpp
-// Copyright (C) 2019-2021 Binomial LLC. All Rights Reserved.
+// Copyright (C) 2019-2024 Binomial LLC. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -174,9 +174,8 @@ static void astc_init()
 	} // range
 }
 
-static inline uint32_t astc_interpolate(uint32_t l, uint32_t h, uint32_t w)
+static inline uint32_t astc_interpolate_linear(uint32_t l, uint32_t h, uint32_t w)
 {
-	// This is for linear values, not sRGB.
 	l = (l << 8) | l;
 	h = (h << 8) | h;
 	uint32_t k = (l * (64 - w) + h * w + 32) >> 6;
@@ -230,7 +229,7 @@ void bc7enc_compress_block_init()
 			{
 				uint32_t high = (h << 4) | h;
 				
-				const int k = astc_interpolate(low, high, g_bc7_weights3[BC7ENC_ASTC_4BIT_3BIT_OPTIMAL_INDEX]);
+				const int k = astc_interpolate_linear(low, high, g_bc7_weights3[BC7ENC_ASTC_4BIT_3BIT_OPTIMAL_INDEX]);
 				const int err = (k - c) * (k - c);
 
 				if (err < best.m_error)
@@ -259,7 +258,7 @@ void bc7enc_compress_block_init()
 			{
 				uint32_t high = (h << 4) | h;
 				
-				const int k = astc_interpolate(low, high, g_bc7_weights2[BC7ENC_ASTC_4BIT_2BIT_OPTIMAL_INDEX]);
+				const int k = astc_interpolate_linear(low, high, g_bc7_weights2[BC7ENC_ASTC_4BIT_2BIT_OPTIMAL_INDEX]);
 				const int err = (k - c) * (k - c);
 
 				if (err < best.m_error)
@@ -288,7 +287,7 @@ void bc7enc_compress_block_init()
 			{
 				uint32_t high = g_astc_sorted_order_unquant[7][h].m_unquant;
 				
-				const int k = astc_interpolate(low, high, g_bc7_weights2[BC7ENC_ASTC_RANGE7_2BIT_OPTIMAL_INDEX]);
+				const int k = astc_interpolate_linear(low, high, g_bc7_weights2[BC7ENC_ASTC_RANGE7_2BIT_OPTIMAL_INDEX]);
 				const int err = (k - c) * (k - c);
 
 				if (err < best.m_error)
@@ -317,7 +316,7 @@ void bc7enc_compress_block_init()
 			{
 				uint32_t high = g_astc_sorted_order_unquant[13][h].m_unquant;
 				
-				const int k = astc_interpolate(low, high, g_astc_weights4[BC7ENC_ASTC_RANGE13_4BIT_OPTIMAL_INDEX]);
+				const int k = astc_interpolate_linear(low, high, g_astc_weights4[BC7ENC_ASTC_RANGE13_4BIT_OPTIMAL_INDEX]);
 				const int err = (k - c) * (k - c);
 
 				if (err < best.m_error)
@@ -346,7 +345,7 @@ void bc7enc_compress_block_init()
 			{
 				uint32_t high = g_astc_sorted_order_unquant[13][h].m_unquant;
 				
-				const int k = astc_interpolate(low, high, g_bc7_weights2[BC7ENC_ASTC_RANGE13_2BIT_OPTIMAL_INDEX]);
+				const int k = astc_interpolate_linear(low, high, g_bc7_weights2[BC7ENC_ASTC_RANGE13_2BIT_OPTIMAL_INDEX]);
 				const int err = (k - c) * (k - c);
 
 				if (err < best.m_error)
@@ -375,7 +374,7 @@ void bc7enc_compress_block_init()
 			{
 				uint32_t high = g_astc_sorted_order_unquant[11][h].m_unquant;
 
-				const int k = astc_interpolate(low, high, g_astc_weights5[BC7ENC_ASTC_RANGE11_5BIT_OPTIMAL_INDEX]);
+				const int k = astc_interpolate_linear(low, high, g_astc_weights5[BC7ENC_ASTC_RANGE11_5BIT_OPTIMAL_INDEX]);
 				const int err = (k - c) * (k - c);
 
 				if (err < best.m_error)
@@ -395,6 +394,7 @@ void bc7enc_compress_block_init()
 static void compute_least_squares_endpoints_rgba(uint32_t N, const uint8_t *pSelectors, const bc7enc_vec4F* pSelector_weights, bc7enc_vec4F* pXl, bc7enc_vec4F* pXh, const color_quad_u8 *pColors)
 {
 	// Least squares using normal equations: http://www.cs.cornell.edu/~bindel/class/cs3220-s12/notes/lec10.pdf 
+	// https://web.archive.org/web/20150319232457/http://www.cs.cornell.edu/~bindel/class/cs3220-s12/notes/lec10.pdf
 	// I did this in matrix form first, expanded out all the ops, then optimized it a bit.
 	double z00 = 0.0f, z01 = 0.0f, z10 = 0.0f, z11 = 0.0f;
 	double q00_r = 0.0f, q10_r = 0.0f, t_r = 0.0f;
@@ -650,7 +650,7 @@ static uint64_t pack_astc_4bit_3bit_to_one_color(const color_cell_compressor_par
 		uint32_t low = (pResults->m_low_endpoint.m_c[i] << 4) | pResults->m_low_endpoint.m_c[i];
 		uint32_t high = (pResults->m_high_endpoint.m_c[i] << 4) | pResults->m_high_endpoint.m_c[i];
 		
-		p.m_c[i] = (uint8_t)astc_interpolate(low, high, g_bc7_weights3[BC7ENC_ASTC_4BIT_3BIT_OPTIMAL_INDEX]);
+		p.m_c[i] = (uint8_t)astc_interpolate_linear(low, high, g_bc7_weights3[BC7ENC_ASTC_4BIT_3BIT_OPTIMAL_INDEX]);
 	}
 	p.m_c[3] = 255;
 
@@ -689,7 +689,7 @@ static uint64_t pack_astc_4bit_2bit_to_one_color_rgba(const color_cell_compresso
 		uint32_t low = (pResults->m_low_endpoint.m_c[i] << 4) | pResults->m_low_endpoint.m_c[i];
 		uint32_t high = (pResults->m_high_endpoint.m_c[i] << 4) | pResults->m_high_endpoint.m_c[i];
 		
-		p.m_c[i] = (uint8_t)astc_interpolate(low, high, g_bc7_weights2[BC7ENC_ASTC_4BIT_2BIT_OPTIMAL_INDEX]);
+		p.m_c[i] = (uint8_t)astc_interpolate_linear(low, high, g_bc7_weights2[BC7ENC_ASTC_4BIT_2BIT_OPTIMAL_INDEX]);
 	}
 	
 	uint64_t total_err = 0;
@@ -728,7 +728,7 @@ static uint64_t pack_astc_range7_2bit_to_one_color(const color_cell_compressor_p
 		uint32_t low = g_astc_sorted_order_unquant[7][pResults->m_low_endpoint.m_c[i]].m_unquant;
 		uint32_t high = g_astc_sorted_order_unquant[7][pResults->m_high_endpoint.m_c[i]].m_unquant;
 		
-		p.m_c[i] = (uint8_t)astc_interpolate(low, high, g_bc7_weights2[BC7ENC_ASTC_RANGE7_2BIT_OPTIMAL_INDEX]);
+		p.m_c[i] = (uint8_t)astc_interpolate_linear(low, high, g_bc7_weights2[BC7ENC_ASTC_RANGE7_2BIT_OPTIMAL_INDEX]);
 	}
 	p.m_c[3] = 255;
 
@@ -768,7 +768,7 @@ static uint64_t pack_astc_range13_2bit_to_one_color(const color_cell_compressor_
 		uint32_t low = g_astc_sorted_order_unquant[13][pResults->m_low_endpoint.m_c[i]].m_unquant;
 		uint32_t high = g_astc_sorted_order_unquant[13][pResults->m_high_endpoint.m_c[i]].m_unquant;
 		
-		p.m_c[i] = (uint8_t)astc_interpolate(low, high, g_bc7_weights2[BC7ENC_ASTC_RANGE13_2BIT_OPTIMAL_INDEX]);
+		p.m_c[i] = (uint8_t)astc_interpolate_linear(low, high, g_bc7_weights2[BC7ENC_ASTC_RANGE13_2BIT_OPTIMAL_INDEX]);
 	}
 	
 	uint64_t total_err = 0;
@@ -807,7 +807,7 @@ static uint64_t pack_astc_range11_5bit_to_one_color(const color_cell_compressor_
 		uint32_t low = g_astc_sorted_order_unquant[11][pResults->m_low_endpoint.m_c[i]].m_unquant;
 		uint32_t high = g_astc_sorted_order_unquant[11][pResults->m_high_endpoint.m_c[i]].m_unquant;
 
-		p.m_c[i] = (uint8_t)astc_interpolate(low, high, g_astc_weights5[BC7ENC_ASTC_RANGE11_5BIT_OPTIMAL_INDEX]);
+		p.m_c[i] = (uint8_t)astc_interpolate_linear(low, high, g_astc_weights5[BC7ENC_ASTC_RANGE11_5BIT_OPTIMAL_INDEX]);
 	}
 
 	uint64_t total_err = 0;
@@ -863,7 +863,7 @@ static uint64_t evaluate_solution(const color_quad_u8 *pLow, const color_quad_u8
 		for (uint32_t i = 1; i < (N - 1); i++)
 		{
 			for (uint32_t j = 0; j < nc; j++)
-				weightedColors[i].m_c[j] = (uint8_t)(astc_interpolate(actualMinColor.m_c[j], actualMaxColor.m_c[j], pParams->m_pSelector_weights[i]));
+				weightedColors[i].m_c[j] = (uint8_t)(astc_interpolate_linear(actualMinColor.m_c[j], actualMaxColor.m_c[j], pParams->m_pSelector_weights[i]));
 		}
 	}
 	else
@@ -1300,8 +1300,9 @@ void check_best_overall_error(const color_cell_compressor_params *pParams, color
 	
 	for (uint32_t i = 1; i < pParams->m_num_selector_weights - 1; i++)
 		for (uint32_t c = 0; c < 4; c++)
-			colors[i].m_c[c] = (uint8_t)astc_interpolate(colors[0].m_c[c], colors[n - 1].m_c[c], pParams->m_pSelector_weights[i]);
+			colors[i].m_c[c] = (uint8_t)astc_interpolate_linear(colors[0].m_c[c], colors[n - 1].m_c[c], pParams->m_pSelector_weights[i]);
 
+#ifdef _DEBUG
 	uint64_t total_err = 0;
 	for (uint32_t p = 0; p < pParams->m_num_pixels; p++)
 	{
@@ -1314,6 +1315,7 @@ void check_best_overall_error(const color_cell_compressor_params *pParams, color
 			total_err += compute_color_distance_rgb(&orig, &packed, pParams->m_perceptual, pParams->m_weights);
 	}
 	assert(total_err == pResults->m_best_overall_err);
+#endif
 	
 	// HACK HACK
 	//if (total_err != pResults->m_best_overall_err)
@@ -1815,10 +1817,10 @@ uint64_t color_cell_compression_est_astc(
 	weightedColors[num_weights - 1] = highColor;
 	for (uint32_t i = 1; i < (num_weights - 1); i++)
 	{
-		weightedColors[i].m_c[0] = (uint8_t)astc_interpolate(lowColor.m_c[0], highColor.m_c[0], pWeight_table[i]);
-		weightedColors[i].m_c[1] = (uint8_t)astc_interpolate(lowColor.m_c[1], highColor.m_c[1], pWeight_table[i]);
-		weightedColors[i].m_c[2] = (uint8_t)astc_interpolate(lowColor.m_c[2], highColor.m_c[2], pWeight_table[i]);
-		weightedColors[i].m_c[3] = (num_comps == 4) ? (uint8_t)astc_interpolate(lowColor.m_c[3], highColor.m_c[3], pWeight_table[i]) : 255;
+		weightedColors[i].m_c[0] = (uint8_t)astc_interpolate_linear(lowColor.m_c[0], highColor.m_c[0], pWeight_table[i]);
+		weightedColors[i].m_c[1] = (uint8_t)astc_interpolate_linear(lowColor.m_c[1], highColor.m_c[1], pWeight_table[i]);
+		weightedColors[i].m_c[2] = (uint8_t)astc_interpolate_linear(lowColor.m_c[2], highColor.m_c[2], pWeight_table[i]);
+		weightedColors[i].m_c[3] = (num_comps == 4) ? (uint8_t)astc_interpolate_linear(lowColor.m_c[3], highColor.m_c[3], pWeight_table[i]) : 255;
 	}
 
 	// Compute dots and thresholds

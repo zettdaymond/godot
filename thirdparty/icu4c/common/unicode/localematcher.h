@@ -11,6 +11,8 @@
 
 #if U_SHOW_CPLUSPLUS_API
 
+#include <optional>
+
 #include "unicode/locid.h"
 #include "unicode/stringpiece.h"
 #include "unicode/uobject.h"
@@ -133,10 +135,10 @@ U_NAMESPACE_BEGIN
 
 struct LSR;
 
+class LikelySubtags;
 class LocaleDistance;
 class LocaleLsrIterator;
 class UVector;
-class XLikelySubtags;
 
 /**
  * Immutable class that picks the best match between a user's desired locales and
@@ -198,7 +200,7 @@ public:
          * @param src Result to move contents from.
          * @stable ICU 65
          */
-        Result(Result &&src) U_NOEXCEPT;
+        Result(Result &&src) noexcept;
 
         /**
          * Destructor.
@@ -214,7 +216,7 @@ public:
          * @param src Result to move contents from.
          * @stable ICU 65
          */
-        Result &operator=(Result &&src) U_NOEXCEPT;
+        Result& operator=(Result&& src) noexcept U_LIFETIME_BOUND;
 
         /**
          * Returns the best-matching desired locale.
@@ -223,7 +225,7 @@ public:
          * @return the best-matching desired locale, or nullptr.
          * @stable ICU 65
          */
-        inline const Locale *getDesiredLocale() const { return desiredLocale; }
+        inline const Locale* getDesiredLocale() const U_LIFETIME_BOUND { return desiredLocale; }
 
         /**
          * Returns the best-matching supported locale.
@@ -234,7 +236,7 @@ public:
          * @return the best-matching supported locale, or nullptr.
          * @stable ICU 65
          */
-        inline const Locale *getSupportedLocale() const { return supportedLocale; }
+        inline const Locale* getSupportedLocale() const U_LIFETIME_BOUND { return supportedLocale; }
 
         /**
          * Returns the index of the best-matching desired locale in the input Iterable order.
@@ -301,7 +303,6 @@ public:
         /**
          * Constructs a builder used in chaining parameters for building a LocaleMatcher.
          *
-         * @return a new Builder object
          * @stable ICU 65
          */
         Builder() {}
@@ -313,7 +314,7 @@ public:
          * @param src Builder to move contents from.
          * @stable ICU 65
          */
-        Builder(Builder &&src) U_NOEXCEPT;
+        Builder(Builder &&src) noexcept;
 
         /**
          * Destructor.
@@ -329,7 +330,7 @@ public:
          * @param src Builder to move contents from.
          * @stable ICU 65
          */
-        Builder &operator=(Builder &&src) U_NOEXCEPT;
+        Builder& operator=(Builder&& src) noexcept U_LIFETIME_BOUND;
 
         /**
          * Parses an Accept-Language string
@@ -342,7 +343,7 @@ public:
          * @return this Builder object
          * @stable ICU 65
          */
-        Builder &setSupportedLocalesFromListString(StringPiece locales);
+        Builder& setSupportedLocalesFromListString(StringPiece locales) U_LIFETIME_BOUND;
 
         /**
          * Copies the supported locales, preserving iteration order.
@@ -353,7 +354,7 @@ public:
          * @return this Builder object
          * @stable ICU 65
          */
-        Builder &setSupportedLocales(Locale::Iterator &locales);
+        Builder& setSupportedLocales(Locale::Iterator& locales) U_LIFETIME_BOUND;
 
         /**
          * Copies the supported locales from the begin/end range, preserving iteration order.
@@ -368,8 +369,8 @@ public:
          * @return this Builder object
          * @stable ICU 65
          */
-        template<typename Iter>
-        Builder &setSupportedLocales(Iter begin, Iter end) {
+        template <typename Iter>
+        Builder& setSupportedLocales(Iter begin, Iter end) U_LIFETIME_BOUND {
             if (U_FAILURE(errorCode_)) { return *this; }
             clearSupportedLocales();
             while (begin != end) {
@@ -393,8 +394,9 @@ public:
          * @return this Builder object
          * @stable ICU 65
          */
-        template<typename Iter, typename Conv>
-        Builder &setSupportedLocalesViaConverter(Iter begin, Iter end, Conv converter) {
+        template <typename Iter, typename Conv>
+        Builder& setSupportedLocalesViaConverter(Iter begin, Iter end,
+                                                 Conv converter) U_LIFETIME_BOUND {
             if (U_FAILURE(errorCode_)) { return *this; }
             clearSupportedLocales();
             while (begin != end) {
@@ -411,19 +413,17 @@ public:
          * @return this Builder object
          * @stable ICU 65
          */
-        Builder &addSupportedLocale(const Locale &locale);
+        Builder& addSupportedLocale(const Locale& locale) U_LIFETIME_BOUND;
 
-#ifndef U_HIDE_DRAFT_API
         /**
          * Sets no default locale.
          * There will be no explicit or implicit default locale.
          * If there is no good match, then the matcher will return nullptr for the
          * best supported locale.
          *
-         * @draft ICU 68
+         * @stable ICU 68
          */
-        Builder &setNoDefaultLocale();
-#endif  // U_HIDE_DRAFT_API
+        Builder& setNoDefaultLocale() U_LIFETIME_BOUND;
 
         /**
          * Sets the default locale; if nullptr, or if it is not set explicitly,
@@ -435,7 +435,7 @@ public:
          * @return this Builder object
          * @stable ICU 65
          */
-        Builder &setDefaultLocale(const Locale *defaultLocale);
+        Builder& setDefaultLocale(const Locale* defaultLocale) U_LIFETIME_BOUND;
 
         /**
          * If ULOCMATCH_FAVOR_SCRIPT, then the language differences are smaller than script
@@ -447,7 +447,7 @@ public:
          * @return this Builder object
          * @stable ICU 65
          */
-        Builder &setFavorSubtag(ULocMatchFavorSubtag subtag);
+        Builder& setFavorSubtag(ULocMatchFavorSubtag subtag) U_LIFETIME_BOUND;
 
         /**
          * Option for whether all desired locales are treated equally or
@@ -457,24 +457,23 @@ public:
          * @return this Builder object
          * @stable ICU 65
          */
-        Builder &setDemotionPerDesiredLocale(ULocMatchDemotion demotion);
+        Builder& setDemotionPerDesiredLocale(ULocMatchDemotion demotion) U_LIFETIME_BOUND;
 
         /**
          * Option for whether to include or ignore one-way (fallback) match data.
          * By default, they are included.
          *
-         * @param direction the match direction to set.
+         * @param matchDirection the match direction to set.
          * @return this Builder object
          * @stable ICU 67
          */
-        Builder &setDirection(ULocMatchDirection direction) {
+        Builder& setDirection(ULocMatchDirection matchDirection) U_LIFETIME_BOUND {
             if (U_SUCCESS(errorCode_)) {
-                direction_ = direction;
+                direction_ = matchDirection;
             }
             return *this;
         }
 
-#ifndef U_HIDE_DRAFT_API
         /**
          * Sets the maximum distance for an acceptable match.
          * The matcher will return a match for a pair of locales only if
@@ -494,10 +493,9 @@ public:
          * @param desired the desired locale for distance comparison.
          * @param supported the supported locale for distance comparison.
          * @return this Builder object
-         * @draft ICU 68
+         * @stable ICU 68
          */
-        Builder &setMaxDistance(const Locale &desired, const Locale &supported);
-#endif  // U_HIDE_DRAFT_API
+        Builder& setMaxDistance(const Locale& desired, const Locale& supported) U_LIFETIME_BOUND;
 
         /**
          * Sets the UErrorCode if an error occurred while setting parameters.
@@ -552,7 +550,7 @@ public:
      * @param src source matcher
      * @stable ICU 65
      */
-    LocaleMatcher(LocaleMatcher &&src) U_NOEXCEPT;
+    LocaleMatcher(LocaleMatcher &&src) noexcept;
 
     /**
      * Destructor.
@@ -568,7 +566,7 @@ public:
      * @return *this
      * @stable ICU 65
      */
-    LocaleMatcher &operator=(LocaleMatcher &&src) U_NOEXCEPT;
+    LocaleMatcher& operator=(LocaleMatcher&& src) noexcept U_LIFETIME_BOUND;
 
     /**
      * Returns the supported locale which best matches the desired locale.
@@ -580,7 +578,8 @@ public:
      * @return the best-matching supported locale.
      * @stable ICU 65
      */
-    const Locale *getBestMatch(const Locale &desiredLocale, UErrorCode &errorCode) const;
+    const Locale* getBestMatch(const Locale& desiredLocale,
+                               UErrorCode& errorCode) const U_LIFETIME_BOUND;
 
     /**
      * Returns the supported locale which best matches one of the desired locales.
@@ -592,7 +591,8 @@ public:
      * @return the best-matching supported locale.
      * @stable ICU 65
      */
-    const Locale *getBestMatch(Locale::Iterator &desiredLocales, UErrorCode &errorCode) const;
+    const Locale* getBestMatch(Locale::Iterator& desiredLocales,
+                               UErrorCode& errorCode) const U_LIFETIME_BOUND;
 
     /**
      * Parses an Accept-Language string
@@ -608,7 +608,8 @@ public:
      * @return the best-matching supported locale.
      * @stable ICU 65
      */
-    const Locale *getBestMatchForListString(StringPiece desiredLocaleList, UErrorCode &errorCode) const;
+    const Locale* getBestMatchForListString(StringPiece desiredLocaleList,
+                                            UErrorCode& errorCode) const U_LIFETIME_BOUND;
 
     /**
      * Returns the best match between the desired locale and the supported locales.
@@ -622,7 +623,8 @@ public:
      * @return the best-matching pair of the desired and a supported locale.
      * @stable ICU 65
      */
-    Result getBestMatchResult(const Locale &desiredLocale, UErrorCode &errorCode) const;
+    Result getBestMatchResult(const Locale& desiredLocale U_LIFETIME_BOUND,
+                              UErrorCode& errorCode) const U_LIFETIME_BOUND;
 
     /**
      * Returns the best match between the desired and supported locales.
@@ -636,9 +638,9 @@ public:
      * @return the best-matching pair of a desired and a supported locale.
      * @stable ICU 65
      */
-    Result getBestMatchResult(Locale::Iterator &desiredLocales, UErrorCode &errorCode) const;
+    Result getBestMatchResult(Locale::Iterator& desiredLocales,
+                              UErrorCode& errorCode) const U_LIFETIME_BOUND;
 
-#ifndef U_HIDE_DRAFT_API
     /**
      * Returns true if the pair of locales matches acceptably.
      * This is influenced by Builder options such as setDirection(), setFavorSubtag(),
@@ -650,10 +652,9 @@ public:
      *                  or else the function returns immediately. Check for U_FAILURE()
      *                  on output or use with function chaining. (See User Guide for details.)
      * @return true if the pair of locales matches acceptably.
-     * @draft ICU 68
+     * @stable ICU 68
      */
     UBool isMatch(const Locale &desired, const Locale &supported, UErrorCode &errorCode) const;
-#endif  // U_HIDE_DRAFT_API
 
 #ifndef U_HIDE_INTERNAL_API
     /**
@@ -684,9 +685,9 @@ private:
 
     int32_t putIfAbsent(const LSR &lsr, int32_t i, int32_t suppLength, UErrorCode &errorCode);
 
-    int32_t getBestSuppIndex(LSR desiredLSR, LocaleLsrIterator *remainingIter, UErrorCode &errorCode) const;
+    std::optional<int32_t> getBestSuppIndex(LSR desiredLSR, LocaleLsrIterator *remainingIter, UErrorCode &errorCode) const;
 
-    const XLikelySubtags &likelySubtags;
+    const LikelySubtags &likelySubtags;
     const LocaleDistance &localeDistance;
     int32_t thresholdDistance;
     int32_t demotionPerDesiredLocale;
